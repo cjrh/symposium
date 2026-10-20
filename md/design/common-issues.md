@@ -88,6 +88,16 @@ And when two walks over one tree feed each other — a copy, and the comparison 
 
 Plugin content must not decide where Symposium writes. A name it supplies, such as a skill's `name`, can resolve outside the directory it is joined onto (`Path::join` does not confine it), so it never becomes part of a path unchecked. Validate it with `skills::is_safe_dir_name`, which also covers Windows-specific path forms, rather than with a check of your own.
 
+## Config load failures are not uninstall requests
+
+A malformed or unreadable user config falls back to defaults for read-only callers,
+including an empty agent list. Never reconcile installations or save that fallback
+as if the user deliberately removed every agent. `Symposium::ensure_config_usable`
+guards sync, hook registration, init, and config writes using the startup load
+result. A missing config still supports first-run init. `tests/config_load.rs`
+covers failure, retry, repair, and deliberate removal for Claude and Pi at both
+scopes.
+
 ## A source that reads as empty is not an empty source
 
 A listing that swallows read errors returns the same empty list for "nothing there" and "could not look", and anything that removes what a source stopped offering turns the second into data loss: a `[[registry]]` path on an unmounted share would make `sync` delete every skill installed from it. So `PackageManager::registry_plugins` fails when a registry cannot be read, `PluginRegistry::unreadable_registries` carries that to `sync`, and `sync` skips its stale-skill cleanup while that list is not empty. Any new pass that removes things because a source stopped offering them belongs behind the same condition. The opposite mistake is as bad: a source that is legitimately absent must not count as unreadable, or cleanup never runs again, which is why the built-in `~/.symposium/plugins/` is left out when nothing exists at that path.

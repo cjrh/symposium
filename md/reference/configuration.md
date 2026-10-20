@@ -2,6 +2,11 @@
 
 `cargo agents` uses a single user-wide configuration file at `~/.symposium/config.toml`. Created by `cargo agents init`.
 
+If an existing file cannot be read or parsed, sync and configuration writes fail
+without removing installed skills or hooks or overwriting the file. Repair the
+file and rerun the command. A missing file uses first-run defaults; a valid empty
+agent list still permits cleanup after deliberate removal.
+
 ## Full example
 
 ```toml

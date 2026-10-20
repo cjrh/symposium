@@ -340,6 +340,7 @@ async fn resolve_custom_predicate_entries(
 /// Run the full sync: discover applicable skills, install into agent dirs,
 /// clean up stale installations.
 pub async fn sync(sym: &Symposium, deps: &Arc<WorkspaceDeps>, update: UpdateLevel) -> Result<()> {
+    sym.ensure_config_usable()?;
     let out = &Output::quiet();
     let loaded = deps
         .load()
@@ -672,6 +673,7 @@ pub async fn sync(sym: &Symposium, deps: &Arc<WorkspaceDeps>, update: UpdateLeve
 /// Register hooks for all configured agents. Uses `home_dir` (global scope).
 /// Called from `init` after writing the user config.
 pub async fn register_hooks(sym: &Symposium, out: &Output) -> Result<()> {
+    sym.ensure_config_usable()?;
     let registry = plugins::load_registry(sym).await;
     let mcp_servers: Vec<sacp::schema::McpServer> = registry
         .plugins
