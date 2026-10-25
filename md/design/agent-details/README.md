@@ -188,3 +188,8 @@ Notes that cost real debugging time:
   `envs`, OpenCode as `environment`, everyone else as `env`.
 - The Copilot CLI also needs an explicit `type` (`local`/`http`/`sse`), or a
   remote entry never appears.
+- Config files can hold tokens (`env`, `headers`) and are often symlinks into a
+  dotfiles repository. A plain temp-file rename turned a `0600` file into `0644`
+  and replaced the link with a regular file, so `save_json` resolves the link
+  and uses the target’s Unix permissions from the moment the temp file is created.
+  New configs retain the normal `0666` creation mode filtered by the process umask.
