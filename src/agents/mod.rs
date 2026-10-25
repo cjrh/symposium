@@ -1054,17 +1054,29 @@ fn save_json(path: &Path, value: &serde_json::Value) -> Result<()> {
         .with_context(|| format!("{} has no parent directory", display_path(&target)))?;
     fs::create_dir_all(parent)?;
 
+    #[cfg(unix)]
+    let permissions = match fs::metadata(&target) {
+        Ok(meta) => Some(meta.permissions()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error.into()),
+    };
     let mut builder = tempfile::Builder::new();
     builder.prefix(".symposium-tmp-");
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt as _;
-        builder.permissions(fs::Permissions::from_mode(0o666));
+        // Keep private configs private from the moment the temp file is created.
+        builder.permissions(
+            permissions
+                .clone()
+                .unwrap_or_else(|| fs::Permissions::from_mode(0o666)),
+        );
     }
     let mut temp = builder.tempfile_in(parent)?;
     #[cfg(unix)]
-    if let Ok(meta) = fs::metadata(&target) {
-        temp.as_file().set_permissions(meta.permissions())?;
+    if let Some(permissions) = permissions {
+        // Restore bits that the umask may have removed during creation.
+        temp.as_file().set_permissions(permissions)?;
     }
     temp.write_all(contents.as_bytes())?;
     temp.persist(&target).map_err(|e| e.error)?;
